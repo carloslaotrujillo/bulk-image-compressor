@@ -6,10 +6,17 @@ outputDir="00_converted_images"
 # Create the output directory if it doesn't already exist
 mkdir -p "$outputDir"
 
+# Check if squoosh-cli is installed
+if ! command -v squoosh-cli &> /dev/null; then
+    echo "squoosh-cli could not be found, please install it first."
+    exit 1
+fi
+
 # Find and convert all .png, .jpg, .jpeg, and files in the current directory and its subdirectories
-find . -type f \( -iname \*.png -o -iname \*.jpg -o -iname \*.jpeg \) | while read i; do
-    # Extract just the filename without the path and prepare the new filename
+find . -type f \( -iname \*.png -o -iname \*.jpg -o -iname \*.jpeg \) | while read -r i; do
+    # Extract the filename and directory path
     filename=$(basename -- "$i")
+    dirpath=$(dirname -- "$i")
     newFilename="${filename%.*}.webp"
     outputPath="$outputDir/$newFilename"
 
@@ -20,13 +27,12 @@ find . -type f \( -iname \*.png -o -iname \*.jpg -o -iname \*.jpeg \) | while re
     fi
     
     echo "Converting $i..."
-    # Convert the image, assuming Squoosh CLI automatically saves the converted file in the current working directory
+    # Convert the image
     squoosh-cli --webp '{"quality":75, "effort":6}' "$i"
     
-    # Move the converted file to the output directory
-    # Check if a converted file exists before moving
-    if [[ -f "$newFilename" ]]; then
-        mv -- "$newFilename" "$outputDir/"
+    # Check if the conversion was successful and the file exists
+    if [[ -f "${dirpath}/${newFilename}" ]]; then
+        mv -- "${dirpath}/${newFilename}" "$outputDir/"
         echo "Moved $newFilename to $outputDir"
     else
         echo "Conversion failed for $i, or the output file does not exist."
